@@ -138,7 +138,11 @@ App = {
     var dex = document.getElementById("dex").value;
     console.log(vig, sat, sta, str, dex)
 
-    }
+
+    App.contracts.CryptoGame.deployed().then(function(gameInstance) {
+      gameInstance.recruitGladiator(App.account);
+    })
+  }
 };
 
 $(function() {
