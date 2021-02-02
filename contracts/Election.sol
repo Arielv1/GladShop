@@ -80,12 +80,12 @@ contract Election {
         // With hash // map should be bytes32
         allowed_voters[
             keccak256(
-                abi.encodePacked(0xA622986848381CCe9B796F9FaC30e0a3c20e3019)
+                abi.encodePacked(0xac9Ffd6ED95725965623354a416478c4aD5E236D)
             )
         ] = true; //0
         allowed_voters[
             keccak256(
-                abi.encodePacked(0xC71546C8C5437CC483A9e5D2A54fFEaC2b6CF186)
+                abi.encodePacked(0xbe44FAbCb03630BA316D106F442681D96C60f549)
             )
         ] = true; //1
         allowed_voters[

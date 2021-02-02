@@ -11,6 +11,7 @@ App = {
 
   init: function() {
     document.getElementById('remainingStats').innerHTML = Math.floor(Math.random() * 5) + 5
+
     App.getallAcounts();
     return App.initWeb3();
   },
@@ -28,59 +29,32 @@ App = {
     return App.initContracts();
   },
 
-  initContracts: function() {
-    $.getJSON("Election.json", function(election) 
-    {
-      App.contracts.Election = TruffleContract(election);
-      App.contracts.Election.setProvider(App.web3Provider);
-      App.contracts.Election.deployed().then(function(election) 
-      {
-        console.log("Token Address:", election.address);
+ initContracts: function() {
+    $.getJSON("CryptoGame.json", function(game) {
+      App.contracts.CryptoGame = TruffleContract(game);
+      App.contracts.CryptoGame.setProvider(App.web3Provider);
+      App.contracts.CryptoGame.deployed().then(function(game) {
+        console.log("Token Address:", game.address);
       });
-    }).done(function()
-     {
-      $.getJSON("ElectionToken.json", function(electionToken) 
-      {
-        App.contracts.ElectionToken = TruffleContract(electionToken);
-        App.contracts.ElectionToken.setProvider(App.web3Provider);
-        App.contracts.ElectionToken.deployed().then(function(electionToken)
-         {
-          console.log("Election Token Address:", electionToken.address);
-         });
-      });
-    }).done(function () 
-    {
-       $.getJSON("CryptoGame.json", function(game) 
-      {
-        App.contracts.CryptoGame = TruffleContract(game);
-        App.contracts.CryptoGame.setProvider(App.web3Provider);
-        App.contracts.CryptoGame.deployed().then(function(game)
-         {
-          console.log("Game Token Address:", game.address);
-         });
-      });
-     
-    }).done(function () 
-    {
-        $.getJSON("ERC20.json", function(tokens) 
-      {
+    }).done(function() {
+      $.getJSON("ERC20.json", function(tokens) {
         App.contracts.ERC20 = TruffleContract(tokens);
         App.contracts.ERC20.setProvider(App.web3Provider);
-        App.contracts.ERC20.deployed().then(function(tokens)
-         {
-          console.log("Gold Coin Tokens Address:", tokens.address);
-         });
+        App.contracts.ERC20.deployed().then(function(tokens) {
+          console.log("Game Token Address:", tokens.address);
+        });
+
+        App.listenForEvents();
+        return App.render();
       });
-      App.listenForEvents();
-      return App.render();
     })
   },
 
   // Listen for events emitted from the contract
   listenForEvents: function() {
-    App.contracts.Election.deployed().then(function(instance) {
+    App.contracts.CryptoGame.deployed().then(function(instance) {
       
-      instance.votedEvent({}, {
+      instance.recruitedGladiatorEvent({}, {
         // fromBlock: latest,
        // toBlock: 'latest'
       }).watch(function(error, event) {
@@ -477,15 +451,30 @@ App = {
     console.log(vig, sat, sta, str, dex)
 
     App.contracts.CryptoGame.deployed().then(function(instance) {
-      console.log("here")
-      return instance.recruitGladiator("0x16544637a00724Abe9571AE0662624cB69B26596");
+      return instance.recruitGladiator()
+    }).then(function(result){
+      console.log("owner result " + result)
+    })
+   /* 
+   
+    App.contracts.ElectionToken.deployed().then(function(instance){
+          ElectionTokenInstance = instance;
+          return ElectionTokenInstance.thebalanceOf(App.account);
+        }).then(function(balance){
+          $("#accountNumberOfTokens").html("You Currently have: " + balance + " Tokens");
+        });
+
+   
+   App.contracts.CryptoGame.deployed().then(function(instance) {
+      
+      return instance.recruitGladiator();
     }).then(function(result) {
       // Wait for votes to update
       $("#content").hide();
       $("#loader").show();
     }).catch(function(err) {
       console.error(err);
-    });
+    });*/
 
     },
 

@@ -8,7 +8,7 @@ App = {
   },
 
   init: function() {
-
+      
       App.initStats();
   //  App.getallAcounts();
     return App.initWeb3();
@@ -19,6 +19,7 @@ App = {
       App.web3Provider = web3.currentProvider;
       ethereum.enable();
       web3 = new Web3(web3.currentProvider);
+      web3.eth.defaultAccount=web3.eth.accounts[0]
     } else {
             
       App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
@@ -126,6 +127,7 @@ App = {
           }
         }
     }
+   
   },
   
 
@@ -138,9 +140,14 @@ App = {
     var dex = document.getElementById("dex").value;
     console.log(vig, sat, sta, str, dex)
 
-
-    App.contracts.CryptoGame.deployed().then(function(gameInstance) {
-      gameInstance.recruitGladiator(App.account);
+    App.contracts.CryptoGame.deployed().then(function(instance) {
+      return instance.recruiteGladiator(0xac9Ffd6ED95725965623354a416478c4aD5E236D, "Sven")
+    }).then(function() {
+       App.contracts.CryptoGame.deployed().then(function(instance2) {
+         return instance2.gladiators(0)
+       }).then(function(res2) {
+         console.log(res2)
+       })
     })
   }
 };
