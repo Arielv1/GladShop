@@ -145,8 +145,8 @@ App = {
     }).then(function() {
        App.contracts.CryptoGame.deployed().then(function(instance2) {
          return instance2.gladiators(0)
-       }).then(function(res2) {
-         console.log(res2)
+       }).then(function(gladiatorResult) {
+         console.log(gladiatorResult)
        })
     })
   }
