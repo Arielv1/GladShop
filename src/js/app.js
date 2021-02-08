@@ -1,25 +1,41 @@
 App = {
+  namepool: [],
   web3Provider: null,
   contracts: {},
   account: '0x0',
-  owner: '0x0',
-  initStats() {
-      document.getElementById('remainingStats').innerHTML = Math.floor(Math.random() * 5) + 5
-  },
+  bank: '0x0',
+  web3: '',
+  gameAddress: 0x0,
+
+  
 
   init: function() {
-      
+     
+      App.initNamepool();
       App.initStats();
   //  App.getallAcounts();
     return App.initWeb3();
   },
 
- initWeb3: function() {
+  initNamepool() {
+    App.namepool = ["Tertius Fulcinius Martialis","Publius Maecilius Plautis","Caeso Balventius Iovinus","Publius Canutius Belletor","Arruns Cispius Vitulus","Titus Lusius Augustus","Decius Verginius Senna","Tiberius Mucius Dardanius","Manius Lollius Figulus","Aulus Falerius Ahala",
+    "Titus Caprenius Siricus","Quintus Laelius Diocourides","Secundus Vesuvius Drusus","Agrippa Galerius Hilaris","Paulus Messienus Eugenius","Sextus Quirinius Tremorinus","Marcus Caeparius Patiens","Vel Aurius Vitalion","Spurius Maelius Sisinnius","Maximus Hortensius Majus"]
+  },
+
+  initStats() {
+      document.getElementById('remainingStats').innerHTML = Math.floor(Math.random() * 5) + 5
+  },
+
+ initWeb3() {
     if (typeof web3 !== 'undefined') {
       App.web3Provider = web3.currentProvider;
       ethereum.enable();
       web3 = new Web3(web3.currentProvider);
-      web3.eth.defaultAccount=web3.eth.accounts[0]
+      web3.eth.defaultAccount = web3.eth.accounts[0]
+      document.getElementById("loader").style.display = "none"
+      document.getElementById("accountStats").style.display = "block"
+      document.getElementById("recruit").style.display = "block"
+      document.getElementById("name").innerHTML = App.namepool[Math.floor(Math.random() * App.namepool.length)]
     } else {
             
       App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
@@ -32,11 +48,12 @@ App = {
 
  
 
-  initContracts: function() {
+  initContracts() {
     $.getJSON("CryptoGame.json", function(game) {
       App.contracts.CryptoGame = TruffleContract(game);
       App.contracts.CryptoGame.setProvider(App.web3Provider);
       App.contracts.CryptoGame.deployed().then(function(game) {
+        gameAddress = game.address
         console.log("CryptoGame Address:", game.address);
       });
     }).done(function() {
@@ -46,26 +63,107 @@ App = {
         App.contracts.ERC20.deployed().then(function(tokens) {
           console.log("All Coin Token Address:", tokens.address);
         });
-
+        App.render()
       });
     })
+
   },
 
+  convertMSToTime : function (milliseconds) {
+      seconds = Math.floor((milliseconds / 1000) % 60),
+      minutes = Math.floor((milliseconds / (1000 * 60)) % 60),
+      hours = Math.floor((milliseconds / (1000 * 60 * 60)) % 24);
+
+      hours = (hours < 10) ? "0" + hours : hours;
+      minutes = (minutes < 10) ? "0" + minutes : minutes;
+      seconds = (seconds < 10) ? "0" + seconds : seconds;  
+      
+      return hours + ":" + minutes + ":" + seconds
+  },
+
+  render() {
+    web3.eth.getCoinbase(function(err, account) {
+      if (err === null) {
+
+      App.web3ProviderAllaccounts = new Web3.providers.HttpProvider('http://localhost:7545');
+      web3allAccounts = new Web3(App.web3ProviderAllaccounts);
+      web3allAccounts.eth.getAccounts(function(err, accounts) {
+        App.ganacheAccounts = accounts
+        App.bank = App.ganacheAccounts[0]
+        console.log("bank address " + App.bank)
+      });
+
+        App.account = account;
+        document.getElementById("accountAddress").innerHTML = "Your Address/Account Is: " + account
+        App.contracts.ERC20.deployed().then(function(instance){
+          return instance.thebalanceOf(App.account);
+        }).then(function(balance){
+          document.getElementById("accountNumberOfTokens").innerHTML = "You Currently have: " + balance + " Gold Coins"
+        }).then(function(){
+          App.contracts.ERC20.deployed().then(function(bankWallet) {
+            return bankWallet.thebalanceOf(App.bank)
+          }).then(function(bankBalance) {
+            console.log("The Bank has " + bankBalance + " tokens")
+          })
+        })
+      }
 
 
-  valueModifier: function(id, name) {
-    var vig = 0,sat = 0,sta = 0, str = 0 , dex = 0
+      App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        return gameInstance.ownerToGladiator(App.account)
+      }).then(function(result){        
+        App.contracts.CryptoGame.deployed().then(function(gameInstance){
+          return gameInstance.gladiators(result.toNumber())
+        }).then(function(gladiatorResult){
+          if (gladiatorResult[9] === App.account) {
+            App.showGladiatorStats(gladiatorResult);
+            console.log(gladiatorResult[10])
+      
+            var cooldownTime = new Date(gladiatorResult[10] * 1000);
+            var cooldownTimerInterval = setInterval(cooldownTimerHandler, 1000)
+            function cooldownTimerHandler() {
+                var now = new Date();
+                var timeDifference = (cooldownTime - now.getTime())
+                if (timeDifference <= 0) {
+                  document.getElementById("cooldownBlock").style.display = "none"
+                  document.getElementById("actions").style.display = "block"
+                  clearInterval(cooldownTimerInterval)
+                }
+                else {
+                    timeRemaining = App.convertMSToTime(timeDifference)
+                    document.getElementById("cooldownBlock").style.display = "block"
+                    document.getElementById("cooldown").innerHTML = gladiatorResult[0] + " is in a resting from an action and will finish in " + timeRemaining
+                    document.getElementById("actions").style.display = "none"
+                }
+            }
+          }
+        })
+      })
+
+      
+      
+    });
+    
+  },
+
+  displayTokens() {
+      App.contracts.ERC20.deployed().then(function(instance){
+          return instance.thebalanceOf(App.account);
+        }).then(function(balance){
+          console.log("updating number of tokens to " + balance)
+          document.getElementById("accountNumberOfTokens").innerHTML = "You Currently have: " + (balance - 10) + " Tokens"
+      })
+  },
+
+  valueModifier(id, name) {
+    var hp = 0, sta = 0, str = 0 , dex = 0
     var remainingStatsToAllocate = Number(document.getElementById("remainingStats").innerHTML)
     if (id === "increase" && remainingStatsToAllocate > 0) {
         remainingStatsToAllocate--;
         document.getElementById('remainingStats').innerHTML = remainingStatsToAllocate
-        if (name === "vigor") {
-          vig = Number(document.getElementById("vigor").value) + 1;
-          document.getElementById('vigor').value=vig
-        }
-        else if (name === "satiation") {
-          sat = Number(document.getElementById("satiation").value) + 1; 
-          document.getElementById('satiation').value=sat
+        if (name === "maxHP") {
+          hp = Number(document.getElementById("maxHP").value) + 10;
+          document.getElementById("maxHP").value=hp
         }
         else if (name === "stamina") {
           sta = Number(document.getElementById("stamina").value) + 1;
@@ -81,20 +179,11 @@ App = {
         }
     }
     else if (id === "decrease"){
-       if (name === "vigor") {
-          vig= Number(document.getElementById("vigor").value);
-          if (vig > 0) {
-            vig--;
-            document.getElementById('vigor').value=vig
-            remainingStatsToAllocate++;
-            document.getElementById('remainingStats').innerHTML = remainingStatsToAllocate
-          }
-        }
-        else if (name === "satiation") {
-          sat= Number(document.getElementById("satiation").value);
-           if (sat > 0) {
-            sat--;
-            document.getElementById('satiation').value=sat
+       if (name === "maxHP") {
+          hp= Number(document.getElementById("maxHP").value);
+          if (hp > 50) {
+            hp-=10;
+            document.getElementById('maxHP').value=hp
             remainingStatsToAllocate++;
             document.getElementById('remainingStats').innerHTML = remainingStatsToAllocate
           }
@@ -129,27 +218,168 @@ App = {
     }
    
   },
-  
 
-  recruitGladiator: function() {
 
-    var vig = document.getElementById("vigor").value;
-    var sat = document.getElementById("satiation").value;
-    var sta = document.getElementById("stamina").value;
-    var str = document.getElementById("str").value;
-    var dex = document.getElementById("dex").value;
-    console.log(vig, sat, sta, str, dex)
+  recruitGladiator() {
+    var name = document.getElementById("name").innerHTML
+    var maxHP = document.getElementById("maxHP").value
+    var sta = document.getElementById("stamina").value
+    var str = document.getElementById("str").value
+    var dex = document.getElementById("dex").value
 
-    App.contracts.CryptoGame.deployed().then(function(instance) {
-      return instance.recruiteGladiator(0xac9Ffd6ED95725965623354a416478c4aD5E236D, "Sven")
-    }).then(function() {
-       App.contracts.CryptoGame.deployed().then(function(instance2) {
-         return instance2.gladiators(0)
-       }).then(function(gladiatorResult) {
-         console.log(gladiatorResult)
-       })
+    remainingStatsToAllocate = Number(document.getElementById("remainingStats").innerHTML)
+    if (remainingStatsToAllocate == 0) {
+      App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        return gameInstance.recruitGladiator(App.account, name, sta, str, dex, maxHP)
+      }).then(function(){
+          return App.render()
+          }).then(function(){  
+        })
+    }
+    else {
+        alert("You have " + remainingStatsToAllocate + " stats left to allocate")
+    } 
+    
+  },
+  arenaSignUp() {
+    App.contracts.CryptoGame.deployed().then(function(gameInstance){
+      cryptoGameInstace = gameInstance
+      return cryptoGameInstace.ownerToGladiator(App.account)
+    }).then(function(gladiatorId){
+        cryptoGameInstace.signInForArena(Number(gladiatorId))
+      /*  App.contracts.CryptoGame.deployed().then(function(gameInstance){
+            gameInstance.signInForArena(Number(gladiatorId))
+        }).then(function(){
+          App.render()
+        })*/
+    }).then(function(){
+          App.render()
+        })
+  },
+
+  arena() {
+    var glad1, glad2;
+    /*App.contracts.CryptoGame.deployed().then(function(instance){
+      gameInstance = instance
+      
+      return gameInstance.arenaRound(1)
+    }).then(function(){
+
+      for (var i = 0; i < 2; i+=2) {
+        gameInstance.gladiatorsForArena(i).then(function(g1){
+            glad1 = g1;
+        })
+         gameInstance.gladiatorsForArena(i+1).then(function(g2){
+            glad2 = g2;
+            gameInstance.fight(i, i+1)
+            console.log(glad1[0]  + " vs "  + glad2[0]) 
+        })
+        
+      }
+    })*/
+  },
+
+  challenge() {
+    App.contracts.CryptoGame.deployed().then(function(gameInstance){
+      cryptoGameInstance = gameInstance;
+      return cryptoGameInstance.ownerToGladiator(App.account)
+    }).then(function(myId){
+      myGladId = Number(myId)
+      console.log(document.getElementById("opponentAddress").value)
+      return cryptoGameInstance.ownerToGladiator(document.getElementById("opponentAddress").value)
+    }).then(function(enemyGladId){
+      /*console.log(myGladId.toString())
+      console.log(enemyGladId.toString())*/
+      console.log("me " + Number(myGladId))
+      console.log("enemy " + Number(enemyGladId))
+      return cryptoGameInstance.fight(myGladId, Number(enemyGladId))
+    }).then(function(winnerId){
+      console.log(Number(winnerId.logs[0].args._winnerId))
+      console.log(Number(winnerId.logs[0].args._winnerId) == myGladId)
     })
-  }
+  },
+
+  eatTraining() {
+
+    App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        cryptoGameInstance = gameInstance;
+        return cryptoGameInstance.ownerToGladiator(App.account)
+    }).then(function(gladiatorId){
+        return cryptoGameInstance.eat(gladiatorId.toNumber())
+    }).then(function(){
+        return App.render()
+    })
+    
+  },
+
+  sleepTraining() {
+    App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        cryptoGameInstance = gameInstance;
+        return cryptoGameInstance.ownerToGladiator(App.account)
+    }).then(function(gladiatorId){
+        return cryptoGameInstance.sleep(gladiatorId.toNumber())
+    }).then(function(){
+        return App.render()
+    })
+  },
+
+  muscleTraining() {
+    App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        cryptoGameInstance = gameInstance;
+        return cryptoGameInstance.ownerToGladiator(App.account)
+    }).then(function(gladiatorId){
+        return cryptoGameInstance.muscleTraining(gladiatorId.toNumber())
+    }).then(function(){
+        return App.render()
+    })
+  },
+
+  enduranceTraining() {
+    App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        cryptoGameInstance = gameInstance;
+        return cryptoGameInstance.ownerToGladiator(App.account)
+    }).then(function(gladiatorId){
+        return cryptoGameInstance.enduranceTraining(gladiatorId.toNumber())
+    }).then(function(){
+        return App.render()
+    })
+  },
+
+  flexibilityTraining() {
+
+   App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        cryptoGameInstance = gameInstance;
+        return cryptoGameInstance.ownerToGladiator(App.account)
+    }).then(function(gladiatorId){
+        return cryptoGameInstance.flexibilityTraining(gladiatorId.toNumber())
+    }).then(function(){
+        return App.render()
+    })
+  },
+  
+  showGladiatorStats(gladiator){
+
+        document.getElementById("gladiatorName").innerHTML = gladiator[0];
+        document.getElementById("gladiatorLevel").innerHTML = gladiator[1];
+        
+        document.getElementById("gladiatorSta").innerHTML = gladiator[4];
+        document.getElementById("gladiatorStr").innerHTML = gladiator[5];
+        document.getElementById("gladiatorDex").innerHTML = gladiator[6];
+        
+        document.getElementById("recruit").style.display = "none"
+        document.getElementById("loader").style.display = "none"
+        document.getElementById("gladiatorStats").style.display = "block"
+
+        document.getElementById("pbHP").innerHTML = gladiator[2] + " HP"
+        document.getElementById("pbHP").style.width = ((gladiator[2] / gladiator[3]) * 100) + "%"
+
+        document.getElementById("pbVigor").innerHTML = gladiator[7] + " Vigor"
+        document.getElementById("pbVigor").style.width = gladiator[7] + "%"
+
+        document.getElementById("pbSatiation").innerHTML = gladiator[8] + " Satiation"
+        document.getElementById("pbSatiation").style.width = gladiator[8] + "%"
+
+  },
 };
 
 $(function() {

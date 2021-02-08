@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Election Results</title>
+    <title>Gladiator Training</title>
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -14,22 +14,63 @@
       <!-- <div class="container" style="width: 650px;"> -->
       <div class="row">
         <div class="col-lg-12">
-          <h1 class="text-center">בחירות 2019</h1>
+          <h1 class="text-center">Gladiator Training</h1>
           <hr/>
           <br/>
+          <div id="loader">
+            <p class="text-center">Loading...</p>
+          </div>
+            </div>  
+            <div id="accountStats" style="display: none">
+               <p id="accountNumberOfTokens" class="text-center">0</p>
+               <p id="accountAddress" class="text-center">0</p>
             </div>
-           <form>
-            <div>
-              <label>Vigor <input class="text-center" style='margin-left: 25px' type="text" id="vigor" value=0></label>
-              <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="vigor" id="increase">+</button>
-              <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="vigor" id="decrease">-</button>
+            <hr>
+            <div class="text-left;" id="gladiatorStats" style="display: none">
+              
+                <h6>Name: <label id="gladiatorName" value=0></label></h6>
+    
+                <h6>Level: <label id="gladiatorLevel" value=0></label></h6>
+                
+                <div class="progress">
+                    <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40"
+                    aria-valuemin="0" aria-valuemax="100" style="width:70%" id="pbHP">
+                      40% Complete (success)
+                    </div>
+                </div>
+                              
+                <div class="progress">
+                    <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40"
+                    aria-valuemin="0" aria-valuemax="100" style="width:70%" id="pbVigor">
+                      40% Complete (success)
+                    </div>
+                </div>
+                
+                <div class="progress">
+                    <div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="40"
+                    aria-valuemin="0" aria-valuemax="100" style="width:70%" id="pbSatiation">
+                      40% Complete (success)
+                    </div>
+                </div>
+
+                <h6>Stamina: <label id="gladiatorSta" value=0></label></h6>
+
+                <h6>Strength: <label id="gladiatorStr" value=0></label></h6>
+
+                <h6>Dexterity: <label id="gladiatorDex" value=0></label></h6>
             </div>
 
+        <form id="recruit" class="text-center" style="display: block">
             
             <div>
-              <label>Satiation  <input class="text-center" style='margin-left: 1px' type="text" id="satiation" value=0></label>
-              <button onClick="App.valueModifier(this.id, this.name); return false" type="submit" class="btn btn-primary btn-sm" name="satiation" id="increase">+</button>
-              <button onClick="App.valueModifier(this.id, this.name); return false" type="submit" class="btn btn-primary btn-sm" name="satiation" id="decrease">-</button>
+              <label id="name" value=0></label>
+
+            </div>
+
+            <div>
+              <label>Max HP<input class="text-center" style='margin-left: 14px' type="text" id="maxHP" value=100></label>
+              <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="maxHP" id="increase">+</button>
+              <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="maxHP" id="decrease">-</button>
             </div>
 
             <div>
@@ -49,19 +90,66 @@
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="dex" id="increase">+</button>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="dex" id="decrease">-</button>
             </div>
-
-            <button onClick="App.recruitGladiator(); return false;" style="margin-left: 100px" type="submit" class="btn btn-primary" name="recruit">Recruit Gladiator</button>  
             
+             <div id="remainingStatsToAllocate">
+                <span>Remaining Stats To Allocate: </span> 
+               <label id="remainingStats" value=0>0</label>
+             </div>
+
+            <button onClick="App.recruitGladiator(); return false;"  type="submit" class="btn btn-primary" name="recruit">Recruit Gladiator</button>      
         </form>
-          <div id="loader">
-            <p class="text-center">Loading...</p>
-          </div>
+         <hr>
+        <div class="text-center" id="cooldownBlock" style="display: none">
+          <label id="cooldown" class="text-center" value=0>0</label>
+        </div> 
+        <form id="actions" style="display: none; margin-left:20px">
+         
+          <h4 class="text-center">Each action costs 10 Gold Coins, to earn more win in the arena</h4>
+            <h5>
+              <button onClick="App.eatTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="eatTraining">Eat</button>
+              <span class="text-success" style="margin-left: 106px">+Satiation(25)</span>  
+              <span class="text-danger" style="margin-left:40px">-Vigor(10) +HP(5)</span>
+            </h5>
+
+            <h5>
+              <button onClick="App.sleepTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="sleepTraining">Sleep</button>
+              <span class="text-success" style="margin-left: 93px">+Vigor(25)</span> 
+              <span class="text-danger" style="margin-left: 62px">-Satiation(10) +HP(20)</span>
+            </h5>
+
+            <h5>
+              <button onClick="App.muscleTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="muscleTraining">Muscle Workout</button>
+              <span class="text-success" style="margin-left: 38px">+Strength(1)</span>
+              <span class="text-danger" style="margin-left: 49px"> -Vigor(20) -Satiation(20) -HP(5)</span>
+            </h5>
+
+            <h5>
+              <button onClick="App.enduranceTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="enduranceTraining">Endurance Training</button>
+              <span class="text-success" style="margin-left: 20px">+Stamina(1)</span>
+              <span class="text-danger" style="margin-left: 49px"> -Vigor(20) -Satiation(20) -HP(5)</span>
+            </h6>
+
+            <h5>
+              <button onClick="App.flexibilityTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="flexibilityTraining">Flexibility Training</button>
+              <span class="text-success" style="margin-left: 29px">+Dexterity(1)</span> 
+              <span class="text-danger" style="margin-left: 45px"> -Vigor(20) -Satiation(20) -HP(5)</span>
+            </h5>
+        </form>
+        <form>
+          <hr>
+            <div>
+              <button class="btn btn-primary"  onClick="App.challenge(); return false;">Challenge Another Account</button>
+              <input class="text-center" style='margin-left: 14px' type="text" id="opponentAddress" value="">
+            </div>
+        </form>
+        </form>
+
+
           <div id ="Winner">
             <p id="TheWinner" class="text-center"></p>
           </div>
-           <div>
-            Remaining Stats To Allocate: 
-            <label id="remainingStats" value=0>0</label>
+
+          
         
           <div id="content" style="display: none;">
             <table class="table">
@@ -78,10 +166,7 @@
             </table>
             <hr/>
             <div class="col-xs-12 col-sm-8 col-sm-push-2">
-          <div>
-            Remaining Stats To Allocate: 
-            <label id="remainingStats" value=0>0</label>
-          </div>
+          
          
             <form onSubmit="App.castVote(); return false;">
               <div class="form-group">
@@ -101,8 +186,8 @@
               </form>
               </div>
               <hr/>
-            <p id="accountAddress" class="text-center"></p>
-            <p id="accountNumberOfTokens" class="text-center"></p>
+            
+           
           </div>
           <div id="times">
           <p id="timerleftformat" class="text-center"></p>

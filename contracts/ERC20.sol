@@ -58,20 +58,6 @@ contract ERC20 is ERC20Interface, SafeMath {
         balanceOf[msg.sender] = _totalSupply;
     }
 
-    /*
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _totalSupplyAmount
-    ) public {
-        name = _name;
-        symbol = _symbol;
-        decimals = _decimals;
-        _totalSupply = _totalSupplyAmount;
-        balanceOf[msg.sender] = _totalSupply;
-    }*/
-
     function totalSupply() public view returns (uint256) {
         return _totalSupply - balanceOf[address(0)];
     }

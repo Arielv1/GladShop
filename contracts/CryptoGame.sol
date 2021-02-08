@@ -27,22 +27,26 @@ contract CryptoGame is ERC721 {
         uint256 dexterity;
         uint256 vigor;
         uint256 satiation;
+        address boss;
+        uint256 cooldownTime;
     }
-
-    event recruitedGladiatorEvent(uint256 indexed gladiatorId);
 
     uint256 randNonce = 0;
     uint256 public numGladiators = 0;
     address public owner;
-    ERC20 public tokens = new ERC20();
+    uint256 public arenaTime;
+
     Gladiator[] public gladiators;
-    // GoldCoinToken public money = new GoldCoinToken();
+    Gladiator[] public gladiatorsForArena;
+    ERC20 public bank;
 
     mapping(uint256 => address) public gladiatorToOwner;
     mapping(address => uint256) public ownerToGladiator;
 
-    modifier onlyOwnerOf(uint256 _gladiatorId) {
-        require(msg.sender == gladiatorToOwner[_gladiatorId]);
+    event Winner(uint256 _winnerId);
+
+    modifier onlyOwnerOf(address _owner) {
+        require(msg.sender == _owner);
         _;
     }
 
@@ -51,14 +55,21 @@ contract CryptoGame is ERC721 {
         _;
     }
 
-    constructor(ERC20 _tokens) public {
-        owner = msg.sender;
-        tokens = _tokens;
+    modifier canAfford(uint256 _id, uint256 _cost) {
+        require(bank.thebalanceOf(gladiatorToOwner[_id]) >= _cost);
+        _;
     }
 
-    /*function setWallet() public {
-        money = new GoldCoinToken();
-    }*/
+    modifier isBusy(uint256 _id) {
+        require(gladiators[_id].cooldownTime <= now);
+        _;
+    }
+
+    constructor(ERC20 tokens) public {
+        owner = msg.sender;
+        bank = tokens;
+        arenaTime = now + 2 minutes;
+    }
 
     function randMod(uint256 _modulus) internal returns (uint256) {
         randNonce++;
@@ -67,116 +78,39 @@ contract CryptoGame is ERC721 {
             _modulus;
     }
 
-    function recruiteGladiator(address _owner, string memory _name)
-        public
-    //onlyOwner(_owner)
-    {
-        uint256 vigor = randMod(100);
-        uint256 satiation = randMod(100);
-        uint256 stamina = randMod(10);
-        uint256 strength = randMod(10);
-        uint256 dexterity = randMod(10);
-        uint256 max_hp = randMod(100);
-        uint256 hp = max_hp;
-        //gladiators[numGladiators] = Gladiator(1, _name, hp, stamina, att, def);
+    function getMyGladiator(address _owner) public returns (uint256) {
+        return ownerToGladiator[_owner];
+    }
+
+    function recruitGladiator(
+        address _owner,
+        string memory _name,
+        uint256 _stamina,
+        uint256 _strength,
+        uint256 _dexterity,
+        uint256 _maxHp
+    ) public {
         uint256 id =
             gladiators.push(
                 Gladiator(
                     _name,
                     1,
-                    hp,
-                    max_hp,
-                    stamina,
-                    strength,
-                    dexterity,
-                    vigor,
-                    satiation
+                    safeAdd(1, randMod(_maxHp)),
+                    _maxHp,
+                    _stamina,
+                    _strength,
+                    _dexterity,
+                    randMod(100),
+                    randMod(100),
+                    _owner,
+                    now
                 )
             ) - 1;
         gladiatorToOwner[id] = _owner;
         ownerToGladiator[_owner] = id;
+        bank.transferFrom(owner, _owner, 50);
         _mint(_owner, id);
     }
-
-    function compare_strings(string memory a, string memory b)
-        public
-        returns (bool)
-    {
-        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
-    }
-
-    function update_score(uint256 res, uint256 max) public returns (uint256) {
-        if (res < 0) {
-            return 0;
-        } else if (res > max) {
-            return max;
-        } else {
-            return res;
-        }
-    }
-
-    function type_to_update(
-        uint256 _gladiatorId,
-        uint256 amount,
-        string memory _name
-    ) public returns (uint256) {
-        uint256 res;
-        uint256 max;
-        if (compare_strings(_name, "hp")) {
-            res = safeAdd(gladiators[_gladiatorId].hp, amount);
-            max = gladiators[_gladiatorId].max_hp;
-            return update_score(res, max);
-        }
-        if (compare_strings(_name, "stamina")) {
-            res = safeAdd(gladiators[_gladiatorId].stamina, amount);
-            return update_score(res, MAX_STAMINA);
-        }
-        if (compare_strings(_name, "strength")) {
-            res = safeAdd(gladiators[_gladiatorId].strength, amount);
-            return update_score(res, MAX_STRENGTH);
-        }
-        if (compare_strings(_name, "dexterity")) {
-            res = safeAdd(gladiators[_gladiatorId].dexterity, amount);
-            return update_score(res, MAX_DEXTERITY);
-        }
-        if (compare_strings(_name, "vigor")) {
-            res = safeAdd(gladiators[_gladiatorId].vigor, amount);
-            return update_score(res, MAX_VIGOR);
-        } else {
-            //satiation
-            res = safeAdd(gladiators[_gladiatorId].satiation, amount);
-            return update_score(res, MAX_SATIATION);
-        }
-    }
-
-    function eat(uint256 _gladiatorId) public {
-        //gladiators[_gladiatorId].hp = 2000;
-        gladiators[_gladiatorId].satiation = safeAdd(
-            HIGH_AMOUNT,
-            gladiators[_gladiatorId].satiation
-        );
-        /*gladiators[_gladiatorId].satiation = type_to_update(
-            _gladiatorId,
-            HIGH_AMOUNT,
-            "satiation"
-        );
-        gladiators[_gladiatorId].vigor = type_to_update(
-            _gladiatorId,
-            -LOW_AMOUNT,
-            "vigor"
-        );
-        gladiators[_gladiatorId].hp = type_to_update(
-            _gladiatorId,
-            MIN_AMOUNT,
-            "hp"
-        );*/
-    }
-
-    /*  function recruitGladiator() public {
-        uint256 id = gladiators.push(Gladiator(1, "Ivan", 1, 1, 1, 1, 1)) - 1;
-
-        emit recruitedGladiatorEvent(id);
-    }*/
 
     function getGladiatorsByOwner(address _owner)
         public
@@ -192,5 +126,445 @@ contract CryptoGame is ERC721 {
             }
         }
         return result;
+    }
+
+    // new functions:
+    function updateMaxHP(uint256 _gladiatorId) public {
+        gladiators[_gladiatorId].max_hp = safeAdd(
+            100,
+            safeAdd(
+                gladiators[_gladiatorId].dexterity,
+                safeAdd(
+                    gladiators[_gladiatorId].strength,
+                    safeMul(gladiators[_gladiatorId].stamina, 3)
+                )
+            )
+        );
+    }
+
+    function checkLimits(
+        uint256 score,
+        uint256 amount,
+        uint256 max,
+        bool isAddition
+    ) public returns (uint256) {
+        if (isAddition) {
+            uint256 res = safeAdd(score, amount);
+            if (res > max) {
+                return max;
+            } else {
+                return res;
+            }
+        } else {
+            if (score < amount) {
+                return 0;
+            } else {
+                return safeSub(score, amount);
+            }
+        }
+    }
+
+    function eat(uint256 _gladiatorId)
+        public
+        canAfford(_gladiatorId, 10)
+        isBusy(_gladiatorId)
+        returns (bool)
+    {
+        // cost - ingame currency
+        // time - add a hour for each use.
+        //require(gladiators[_gladiatorId].cooldownTime <= now);
+        gladiators[_gladiatorId].satiation = checkLimits(
+            gladiators[_gladiatorId].satiation,
+            HIGH_AMOUNT,
+            MAX_SATIATION,
+            true
+        );
+
+        gladiators[_gladiatorId].vigor = checkLimits(
+            gladiators[_gladiatorId].vigor,
+            LOW_AMOUNT,
+            MAX_VIGOR,
+            false
+        );
+
+        gladiators[_gladiatorId].hp = checkLimits(
+            gladiators[_gladiatorId].hp,
+            MIN_AMOUNT,
+            gladiators[_gladiatorId].max_hp,
+            true
+        );
+
+        gladiators[_gladiatorId].cooldownTime = now + 1 minutes;
+        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
+        return true;
+    }
+
+    function sleep(uint256 _gladiatorId)
+        public
+        canAfford(_gladiatorId, 10)
+        isBusy(_gladiatorId)
+    {
+        // cost - ingame currency
+        // time - add a hour for each use.
+
+        gladiators[_gladiatorId].vigor = checkLimits(
+            gladiators[_gladiatorId].vigor,
+            HIGH_AMOUNT,
+            MAX_VIGOR,
+            true
+        );
+
+        gladiators[_gladiatorId].satiation = checkLimits(
+            gladiators[_gladiatorId].satiation,
+            LOW_AMOUNT,
+            MAX_SATIATION,
+            false
+        );
+
+        gladiators[_gladiatorId].hp = checkLimits(
+            gladiators[_gladiatorId].hp,
+            STANDARD_AMOUNT,
+            gladiators[_gladiatorId].max_hp,
+            true
+        );
+
+        gladiators[_gladiatorId].cooldownTime = now + 1 minutes + 30 seconds;
+        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
+    }
+
+    // Strength
+    function muscleTraining(uint256 _gladiatorId)
+        public
+        canAfford(_gladiatorId, 10)
+        isBusy(_gladiatorId)
+    {
+        // cost - ingame currency
+        // time - add a hour for each use.
+
+        gladiators[_gladiatorId].strength = checkLimits(
+            gladiators[_gladiatorId].strength,
+            LEVEL_UP,
+            MAX_STRENGTH,
+            true
+        );
+
+        gladiators[_gladiatorId].vigor = checkLimits(
+            gladiators[_gladiatorId].vigor,
+            STANDARD_AMOUNT,
+            MAX_VIGOR,
+            false
+        );
+
+        gladiators[_gladiatorId].satiation = checkLimits(
+            gladiators[_gladiatorId].satiation,
+            STANDARD_AMOUNT,
+            MAX_SATIATION,
+            false
+        );
+
+        gladiators[_gladiatorId].hp = checkLimits(
+            gladiators[_gladiatorId].hp,
+            MIN_AMOUNT,
+            gladiators[_gladiatorId].max_hp,
+            false
+        );
+
+        gladiators[_gladiatorId].cooldownTime = now + 3 minutes + 15 seconds;
+        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
+    }
+
+    // Stamina
+    function enduranceTraining(uint256 _gladiatorId)
+        public
+        canAfford(_gladiatorId, 10)
+        isBusy(_gladiatorId)
+    {
+        // cost - ingame currency
+        // time - add a hour for each use.
+
+        gladiators[_gladiatorId].stamina = checkLimits(
+            gladiators[_gladiatorId].stamina,
+            LEVEL_UP,
+            MAX_STAMINA,
+            true
+        );
+
+        gladiators[_gladiatorId].vigor = checkLimits(
+            gladiators[_gladiatorId].vigor,
+            STANDARD_AMOUNT,
+            MAX_VIGOR,
+            false
+        );
+
+        gladiators[_gladiatorId].satiation = checkLimits(
+            gladiators[_gladiatorId].satiation,
+            STANDARD_AMOUNT,
+            MAX_SATIATION,
+            false
+        );
+
+        gladiators[_gladiatorId].hp = checkLimits(
+            gladiators[_gladiatorId].hp,
+            MIN_AMOUNT,
+            gladiators[_gladiatorId].max_hp,
+            false
+        );
+
+        gladiators[_gladiatorId].cooldownTime = now + 5 minutes;
+        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
+    }
+
+    // Dexterity
+    function flexibilityTraining(uint256 _gladiatorId)
+        public
+        canAfford(_gladiatorId, 10)
+        isBusy(_gladiatorId)
+    {
+        // cost - ingame currency
+        // time - add a hour for each use.
+        gladiators[_gladiatorId].dexterity = checkLimits(
+            gladiators[_gladiatorId].dexterity,
+            LEVEL_UP,
+            MAX_DEXTERITY,
+            true
+        );
+
+        gladiators[_gladiatorId].vigor = checkLimits(
+            gladiators[_gladiatorId].vigor,
+            STANDARD_AMOUNT,
+            MAX_VIGOR,
+            false
+        );
+
+        gladiators[_gladiatorId].satiation = checkLimits(
+            gladiators[_gladiatorId].satiation,
+            STANDARD_AMOUNT,
+            MAX_SATIATION,
+            false
+        );
+
+        gladiators[_gladiatorId].hp = checkLimits(
+            gladiators[_gladiatorId].hp,
+            MIN_AMOUNT,
+            gladiators[_gladiatorId].max_hp,
+            false
+        );
+
+        gladiators[_gladiatorId].cooldownTime = now + 2 minutes;
+        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
+    }
+
+    function hpStatusModifier(uint256 _gladiatorId) public returns (uint256) {
+        if (gladiators[_gladiatorId].hp < 10) {
+            // below 10 -> no benefit to power.
+            return 0;
+        } else if (
+            gladiators[_gladiatorId].hp == gladiators[_gladiatorId].max_hp
+        ) {
+            // double benefit
+            return 2;
+        } else {
+            // normal benefit
+            return 1;
+        }
+    }
+
+    function vigorStatus(uint256 _gladiatorId) public returns (uint256) {
+        if (gladiators[_gladiatorId].vigor < 5) {
+            // The Gladiator is exhausted -> no benefit to power.
+            return 0;
+        } else if (
+            (gladiators[_gladiatorId].vigor >= 5 &&
+                gladiators[_gladiatorId].vigor < 50) ||
+            (gladiators[_gladiatorId].vigor > 75 &&
+                gladiators[_gladiatorId].vigor <= 100)
+        ) {
+            // fatigue or hypersomnia/oversleeping
+            return 1;
+        } else {
+            // optimal wakefulness
+            return 2;
+        }
+    }
+
+    function satiationStatus(uint256 _gladiatorId) public returns (uint256) {
+        if (gladiators[_gladiatorId].hp < 10) {
+            // The Gladiator is famished -> no benefit to power.
+            return 0;
+        } else if (
+            (gladiators[_gladiatorId].vigor >= 10 &&
+                gladiators[_gladiatorId].vigor < 60) ||
+            (gladiators[_gladiatorId].vigor > 80 &&
+                gladiators[_gladiatorId].vigor <= 100)
+        ) {
+            // undereating or overeating
+            return 1;
+        } else {
+            // optimal food consumption
+            return 2;
+        }
+    }
+
+    function calcDef(uint256 _gladiatorId) public returns (uint256) {
+        uint256 def =
+            safeAdd(
+                safeMul(gladiators[_gladiatorId].stamina, 3),
+                safeMul(gladiators[_gladiatorId].dexterity, 2)
+            );
+        return def;
+    }
+
+    function calcAtt(uint256 _gladiatorId) public returns (uint256) {
+        uint256 att =
+            safeAdd(
+                safeMul(gladiators[_gladiatorId].strength, 3),
+                safeMul(gladiators[_gladiatorId].dexterity, 2)
+            );
+        return att;
+    }
+
+    function calcPower(uint256 _gladiatorId) public returns (uint256) {
+        uint256 power =
+            safeAdd(
+                safeMul(
+                    gladiators[_gladiatorId].hp,
+                    hpStatusModifier(_gladiatorId)
+                ),
+                safeAdd(calcDef(_gladiatorId), calcAtt(_gladiatorId))
+            );
+        return power;
+    }
+
+    function fight(uint256 _gladiatorId1, uint256 _gladiatorId2) public {
+        // Compare the power of both gladiators.
+        if (calcPower(_gladiatorId1) < calcPower(_gladiatorId2)) {
+            // player 2 wins!
+            //delete gladiatorsForArena[_gladiatorId1];
+            emit Winner(_gladiatorId2);
+        } else {
+            // // player 1 wins!
+
+            emit Winner(_gladiatorId1);
+        }
+    }
+
+    function signInForArena(uint256 _gladiatorId)
+        public
+        canAfford(_gladiatorId, 10)
+        isBusy(_gladiatorId)
+    {
+        gladiatorsForArena.push(gladiators[_gladiatorId]);
+        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
+    }
+
+    function prepArenaParticipants() public {
+        // assume 8 gladiators participate
+        // cost - ingame currency
+
+        for (uint256 i = gladiatorsForArena.length + 1; i < 8; i++) {
+            uint256 vigor = randMod(100);
+            uint256 satiation = randMod(100);
+            uint256 stamina = randMod(10);
+            uint256 strength = randMod(10);
+            uint256 dexterity = randMod(10);
+            uint256 max_hp = randMod(100);
+            uint256 hp = max_hp;
+            gladiatorsForArena.push(
+                Gladiator(
+                    "Bot",
+                    1,
+                    hp,
+                    max_hp,
+                    stamina,
+                    strength,
+                    dexterity,
+                    vigor,
+                    satiation,
+                    owner,
+                    now
+                )
+            );
+        }
+    }
+
+    function arenaRound(uint256 _round) public {
+        if (_round == 1) {
+            for (uint256 i = 0; i < gladiatorsForArena.length; i += 2) {
+                fight(i, i + 1);
+            }
+        }
+    }
+
+    // testing stuff: will be deleted
+    function uintToString(uint256 v, bool scientific)
+        public
+        pure
+        returns (string memory str)
+    {
+        if (v == 0) {
+            return "0";
+        }
+
+        uint256 maxlength = 100;
+        bytes memory reversed = new bytes(maxlength);
+        uint256 i = 0;
+
+        while (v != 0) {
+            uint256 remainder = v % 10;
+            v = v / 10;
+            reversed[i++] = bytes1(uint8(48 + remainder));
+        }
+
+        uint256 zeros = 0;
+        if (scientific) {
+            for (uint256 k = 0; k < i; k++) {
+                if (reversed[k] == "0") {
+                    zeros++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        uint256 len = i - (zeros > 2 ? zeros : 0);
+        bytes memory s = new bytes(len);
+        for (uint256 j = 0; j < len; j++) {
+            s[j] = reversed[i - j - 1];
+        }
+
+        str = string(s);
+
+        if (scientific && zeros > 2) {
+            str = string(abi.encodePacked(s, "e", uintToString(zeros, false)));
+        }
+    }
+
+    function test_safeAdd(uint256 a, uint256 b) public {
+        string memory result = uintToString(safeAdd(a, b), true);
+        require(false, result);
+    }
+
+    function test_safeSub(uint256 a, uint256 b) public {
+        string memory result = uintToString(safeSub(a, b), true);
+        require(false, result);
+    }
+
+    function test_safeMul(uint256 a, uint256 b) public {
+        string memory result = uintToString(safeMul(a, b), true);
+        require(false, result);
+    }
+
+    function test_safeDiv(uint256 a, uint256 b) public {
+        string memory result = uintToString(safeDiv(a, b), true);
+        require(false, result);
+    }
+
+    function test_calc_power(uint256 _gladiatorId) public {
+        string memory result = uintToString(calcPower(_gladiatorId), true);
+        require(false, result);
+    }
+
+    function test_delete() public {
+        delete gladiatorsForArena[0];
     }
 }

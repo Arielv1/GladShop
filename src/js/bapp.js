@@ -451,7 +451,7 @@ App = {
     console.log(vig, sat, sta, str, dex)
 
     App.contracts.CryptoGame.deployed().then(function(instance) {
-      return instance.recruitGladiator()
+      return instance.recruitGladiator(0xAf39024387D211E5c05665E0491615e3582DE17A, "Sven")
     }).then(function(result){
       console.log("owner result " + result)
     })
