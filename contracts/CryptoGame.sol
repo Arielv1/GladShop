@@ -4,13 +4,11 @@ import "./ERC721.sol";
 import "./ERC20.sol";
 
 contract CryptoGame is ERC721 {
-    uint256 constant LEVEL_UP = 1;
     uint256 constant MIN_AMOUNT = 5;
     uint256 constant LOW_AMOUNT = 10;
     uint256 constant STANDARD_AMOUNT = 20;
     uint256 constant HIGH_AMOUNT = 25;
 
-    uint256 constant MAX_LEVEL = 20;
     uint256 constant MAX_STAMINA = 50;
     uint256 constant MAX_STRENGTH = 50;
     uint256 constant MAX_DEXTERITY = 50;
@@ -19,7 +17,7 @@ contract CryptoGame is ERC721 {
 
     struct Gladiator {
         string name;
-        uint256 level;
+        uint256 tier;
         uint256 hp;
         uint256 max_hp;
         uint256 stamina;
@@ -29,6 +27,8 @@ contract CryptoGame is ERC721 {
         uint256 satiation;
         address boss;
         uint256 cooldownTime;
+        uint256 safetyNetCooldown;
+        uint256 wins;
     }
 
     uint256 randNonce = 0;
@@ -38,12 +38,15 @@ contract CryptoGame is ERC721 {
 
     Gladiator[] public gladiators;
     Gladiator[] public gladiatorsForArena;
+    Gladiator public gladiatorBot;
     ERC20 public bank;
 
     mapping(uint256 => address) public gladiatorToOwner;
     mapping(address => uint256) public ownerToGladiator;
 
+    event BusyEvent(string _messege);
     event Winner(uint256 _winnerId);
+    event AIFightStatistics(uint256 _myPower, uint256 _aiPower);
 
     modifier onlyOwnerOf(address _owner) {
         require(msg.sender == _owner);
@@ -60,8 +63,9 @@ contract CryptoGame is ERC721 {
         _;
     }
 
-    modifier isBusy(uint256 _id) {
+    modifier isBusy(uint256 _id, string memory _message) {
         require(gladiators[_id].cooldownTime <= now);
+        emit BusyEvent(_message);
         _;
     }
 
@@ -78,10 +82,6 @@ contract CryptoGame is ERC721 {
             _modulus;
     }
 
-    function getMyGladiator(address _owner) public returns (uint256) {
-        return ownerToGladiator[_owner];
-    }
-
     function recruitGladiator(
         address _owner,
         string memory _name,
@@ -95,7 +95,7 @@ contract CryptoGame is ERC721 {
                 Gladiator(
                     _name,
                     1,
-                    safeAdd(1, randMod(_maxHp)),
+                    safeAdd(safeDiv(_maxHp, 2), _maxHp),
                     _maxHp,
                     _stamina,
                     _strength,
@@ -103,7 +103,9 @@ contract CryptoGame is ERC721 {
                     randMod(100),
                     randMod(100),
                     _owner,
-                    now
+                    now,
+                    now,
+                    0
                 )
             ) - 1;
         gladiatorToOwner[id] = _owner;
@@ -129,7 +131,7 @@ contract CryptoGame is ERC721 {
     }
 
     // new functions:
-    function updateMaxHP(uint256 _gladiatorId) public {
+    function updateMaxHP(uint256 _gladiatorId) internal {
         gladiators[_gladiatorId].max_hp = safeAdd(
             100,
             safeAdd(
@@ -165,9 +167,9 @@ contract CryptoGame is ERC721 {
     }
 
     function eat(uint256 _gladiatorId)
-        public
+        external
         canAfford(_gladiatorId, 10)
-        isBusy(_gladiatorId)
+        isBusy(_gladiatorId, "Busy Eating")
         returns (bool)
     {
         // cost - ingame currency
@@ -200,9 +202,9 @@ contract CryptoGame is ERC721 {
     }
 
     function sleep(uint256 _gladiatorId)
-        public
+        external
         canAfford(_gladiatorId, 10)
-        isBusy(_gladiatorId)
+        isBusy(_gladiatorId, "Busy Sleeping")
     {
         // cost - ingame currency
         // time - add a hour for each use.
@@ -234,16 +236,16 @@ contract CryptoGame is ERC721 {
 
     // Strength
     function muscleTraining(uint256 _gladiatorId)
-        public
+        external
         canAfford(_gladiatorId, 10)
-        isBusy(_gladiatorId)
+        isBusy(_gladiatorId, "Busy Training")
     {
         // cost - ingame currency
         // time - add a hour for each use.
 
         gladiators[_gladiatorId].strength = checkLimits(
             gladiators[_gladiatorId].strength,
-            LEVEL_UP,
+            1,
             MAX_STRENGTH,
             true
         );
@@ -275,16 +277,16 @@ contract CryptoGame is ERC721 {
 
     // Stamina
     function enduranceTraining(uint256 _gladiatorId)
-        public
+        external
         canAfford(_gladiatorId, 10)
-        isBusy(_gladiatorId)
+        isBusy(_gladiatorId, "Busy Training")
     {
         // cost - ingame currency
         // time - add a hour for each use.
 
         gladiators[_gladiatorId].stamina = checkLimits(
             gladiators[_gladiatorId].stamina,
-            LEVEL_UP,
+            1,
             MAX_STAMINA,
             true
         );
@@ -316,15 +318,15 @@ contract CryptoGame is ERC721 {
 
     // Dexterity
     function flexibilityTraining(uint256 _gladiatorId)
-        public
+        external
         canAfford(_gladiatorId, 10)
-        isBusy(_gladiatorId)
+        isBusy(_gladiatorId, "Busy Training")
     {
         // cost - ingame currency
         // time - add a hour for each use.
         gladiators[_gladiatorId].dexterity = checkLimits(
             gladiators[_gladiatorId].dexterity,
-            LEVEL_UP,
+            1,
             MAX_DEXTERITY,
             true
         );
@@ -354,7 +356,7 @@ contract CryptoGame is ERC721 {
         bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
     }
 
-    function hpStatusModifier(uint256 _gladiatorId) public returns (uint256) {
+    function hpStatusModifier(uint256 _gladiatorId) internal returns (uint256) {
         if (gladiators[_gladiatorId].hp < 10) {
             // below 10 -> no benefit to power.
             return 0;
@@ -369,7 +371,7 @@ contract CryptoGame is ERC721 {
         }
     }
 
-    function vigorStatus(uint256 _gladiatorId) public returns (uint256) {
+    function vigorStatus(uint256 _gladiatorId) internal returns (uint256) {
         if (gladiators[_gladiatorId].vigor < 5) {
             // The Gladiator is exhausted -> no benefit to power.
             return 0;
@@ -387,7 +389,7 @@ contract CryptoGame is ERC721 {
         }
     }
 
-    function satiationStatus(uint256 _gladiatorId) public returns (uint256) {
+    function satiationStatus(uint256 _gladiatorId) internal returns (uint256) {
         if (gladiators[_gladiatorId].hp < 10) {
             // The Gladiator is famished -> no benefit to power.
             return 0;
@@ -405,7 +407,7 @@ contract CryptoGame is ERC721 {
         }
     }
 
-    function calcDef(uint256 _gladiatorId) public returns (uint256) {
+    function calcDef(uint256 _gladiatorId) internal returns (uint256) {
         uint256 def =
             safeAdd(
                 safeMul(gladiators[_gladiatorId].stamina, 3),
@@ -414,7 +416,7 @@ contract CryptoGame is ERC721 {
         return def;
     }
 
-    function calcAtt(uint256 _gladiatorId) public returns (uint256) {
+    function calcAtt(uint256 _gladiatorId) internal returns (uint256) {
         uint256 att =
             safeAdd(
                 safeMul(gladiators[_gladiatorId].strength, 3),
@@ -423,7 +425,7 @@ contract CryptoGame is ERC721 {
         return att;
     }
 
-    function calcPower(uint256 _gladiatorId) public returns (uint256) {
+    function calcPower(uint256 _gladiatorId) internal returns (uint256) {
         uint256 power =
             safeAdd(
                 safeMul(
@@ -435,136 +437,113 @@ contract CryptoGame is ERC721 {
         return power;
     }
 
-    function fight(uint256 _gladiatorId1, uint256 _gladiatorId2) public {
+    function handleStatsFromVictory(uint256 _gladiatorId) internal {
+        gladiators[_gladiatorId].hp = safeDiv(gladiators[_gladiatorId].hp, 4);
+        gladiators[_gladiatorId].satiation = safeDiv(
+            gladiators[_gladiatorId].satiation,
+            3
+        );
+        gladiators[_gladiatorId].vigor = safeDiv(
+            gladiators[_gladiatorId].vigor,
+            3
+        );
+    }
+
+    function handleStatsFromLoss(uint256 _gladiatorId) internal {
+        gladiators[_gladiatorId].hp = safeDiv(
+            safeDiv(gladiators[_gladiatorId].hp, 2),
+            2
+        );
+        gladiators[_gladiatorId].satiation = safeDiv(
+            safeDiv(gladiators[_gladiatorId].satiation, 2),
+            3
+        );
+        gladiators[_gladiatorId].vigor = safeDiv(
+            safeDiv(gladiators[_gladiatorId].vigor, 2),
+            2
+        );
+    }
+
+    function fightAI(uint256 _gladiatorId) external {
+        uint256 aiPower = 100 * gladiators[_gladiatorId].tier + randMod(100);
+        uint256 gladPower = calcPower(_gladiatorId);
         // Compare the power of both gladiators.
-        if (calcPower(_gladiatorId1) < calcPower(_gladiatorId2)) {
-            // player 2 wins!
-            //delete gladiatorsForArena[_gladiatorId1];
-            emit Winner(_gladiatorId2);
+        if (gladPower > aiPower) {
+            bank.transferFrom(owner, gladiators[_gladiatorId].boss, 25);
         } else {
-            // // player 1 wins!
-
-            emit Winner(_gladiatorId1);
+            bank.transferFrom(gladiators[_gladiatorId].boss, owner, 10);
         }
+        gladiators[_gladiatorId].cooldownTime = now + 20 seconds;
+        emit AIFightStatistics(gladPower, aiPower);
     }
 
-    function signInForArena(uint256 _gladiatorId)
-        public
-        canAfford(_gladiatorId, 10)
-        isBusy(_gladiatorId)
+    function fight(uint256 _gladiatorId1, uint256 _gladiatorId2)
+        external
+        isBusy(_gladiatorId2, "Opponent Is Busy")
     {
-        gladiatorsForArena.push(gladiators[_gladiatorId]);
-        bank.transferFrom(gladiatorToOwner[_gladiatorId], owner, 10);
-    }
+        require(
+            gladiators[_gladiatorId2].safetyNetCooldown <= now &&
+                gladiators[_gladiatorId1].tier <= gladiators[_gladiatorId2].tier
+        );
 
-    function prepArenaParticipants() public {
-        // assume 8 gladiators participate
-        // cost - ingame currency
+        // Compare the power of both gladiators.
+        if (calcPower(_gladiatorId1) > calcPower(_gladiatorId2)) {
+            gladiators[_gladiatorId2].safetyNetCooldown = now + 30 seconds;
 
-        for (uint256 i = gladiatorsForArena.length + 1; i < 8; i++) {
-            uint256 vigor = randMod(100);
-            uint256 satiation = randMod(100);
-            uint256 stamina = randMod(10);
-            uint256 strength = randMod(10);
-            uint256 dexterity = randMod(10);
-            uint256 max_hp = randMod(100);
-            uint256 hp = max_hp;
-            gladiatorsForArena.push(
-                Gladiator(
-                    "Bot",
-                    1,
-                    hp,
-                    max_hp,
-                    stamina,
-                    strength,
-                    dexterity,
-                    vigor,
-                    satiation,
+            uint256 numWins = safeAdd(gladiators[_gladiatorId1].wins, 1);
+            if (numWins == gladiators[_gladiatorId1].tier) {
+                gladiators[_gladiatorId1].wins = 0;
+                gladiators[_gladiatorId1].tier++;
+                bank.transferFrom(
                     owner,
-                    now
-                )
-            );
-        }
-    }
-
-    function arenaRound(uint256 _round) public {
-        if (_round == 1) {
-            for (uint256 i = 0; i < gladiatorsForArena.length; i += 2) {
-                fight(i, i + 1);
+                    gladiators[_gladiatorId1].boss,
+                    safeMul(gladiators[_gladiatorId1].tier, 5)
+                );
+            } else {
+                gladiators[_gladiatorId1].wins = numWins;
             }
-        }
-    }
 
-    // testing stuff: will be deleted
-    function uintToString(uint256 v, bool scientific)
-        public
-        pure
-        returns (string memory str)
-    {
-        if (v == 0) {
-            return "0";
-        }
-
-        uint256 maxlength = 100;
-        bytes memory reversed = new bytes(maxlength);
-        uint256 i = 0;
-
-        while (v != 0) {
-            uint256 remainder = v % 10;
-            v = v / 10;
-            reversed[i++] = bytes1(uint8(48 + remainder));
-        }
-
-        uint256 zeros = 0;
-        if (scientific) {
-            for (uint256 k = 0; k < i; k++) {
-                if (reversed[k] == "0") {
-                    zeros++;
-                } else {
-                    break;
+            handleStatsFromVictory(_gladiatorId1);
+            bank.transferFrom(owner, gladiators[_gladiatorId1].boss, 10);
+            emit Winner(_gladiatorId1);
+        } else {
+            // player 2 wins!
+            uint256 lossAmount = 10;
+            if (gladiators[_gladiatorId1].wins == 0) {
+                if (gladiators[_gladiatorId1].tier != 1) {
+                    gladiators[_gladiatorId1].tier = safeSub(
+                        gladiators[_gladiatorId1].tier,
+                        1
+                    );
+                    lossAmount = 0;
                 }
+            } else {
+                gladiators[_gladiatorId1].wins = safeSub(
+                    gladiators[_gladiatorId1].wins,
+                    1
+                );
             }
+
+            handleStatsFromLoss(_gladiatorId1);
+            bank.transferFrom(
+                gladiators[_gladiatorId1].boss,
+                owner,
+                lossAmount
+            );
+            emit Winner(_gladiatorId2);
         }
-
-        uint256 len = i - (zeros > 2 ? zeros : 0);
-        bytes memory s = new bytes(len);
-        for (uint256 j = 0; j < len; j++) {
-            s[j] = reversed[i - j - 1];
-        }
-
-        str = string(s);
-
-        if (scientific && zeros > 2) {
-            str = string(abi.encodePacked(s, "e", uintToString(zeros, false)));
-        }
+        gladiators[_gladiatorId1].cooldownTime = now + 20 seconds;
     }
 
-    function test_safeAdd(uint256 a, uint256 b) public {
-        string memory result = uintToString(safeAdd(a, b), true);
-        require(false, result);
-    }
-
-    function test_safeSub(uint256 a, uint256 b) public {
-        string memory result = uintToString(safeSub(a, b), true);
-        require(false, result);
-    }
-
-    function test_safeMul(uint256 a, uint256 b) public {
-        string memory result = uintToString(safeMul(a, b), true);
-        require(false, result);
-    }
-
-    function test_safeDiv(uint256 a, uint256 b) public {
-        string memory result = uintToString(safeDiv(a, b), true);
-        require(false, result);
-    }
-
-    function test_calc_power(uint256 _gladiatorId) public {
-        string memory result = uintToString(calcPower(_gladiatorId), true);
-        require(false, result);
-    }
-
-    function test_delete() public {
-        delete gladiatorsForArena[0];
+    function randomInRange(uint256 _low, uint256 _high)
+        internal
+        returns (uint256)
+    {
+        uint256 randomnumber =
+            uint256(keccak256(abi.encodePacked(now, msg.sender, randNonce))) %
+                (_high - _low);
+        randomnumber = randomnumber + _low;
+        randNonce++;
+        return randomnumber;
     }
 }

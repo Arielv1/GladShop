@@ -5,7 +5,6 @@ App = {
   account: '0x0',
   bank: '0x0',
   web3: '',
-  gameAddress: 0x0,
 
   
 
@@ -32,15 +31,14 @@ App = {
       ethereum.enable();
       web3 = new Web3(web3.currentProvider);
       web3.eth.defaultAccount = web3.eth.accounts[0]
-      document.getElementById("loader").style.display = "none"
-      document.getElementById("accountStats").style.display = "block"
       document.getElementById("recruit").style.display = "block"
-      document.getElementById("name").innerHTML = App.namepool[Math.floor(Math.random() * App.namepool.length)]
+        
     } else {
             
       App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
       ethereum.enable();
       web3 = new Web3(App.web3Provider);
+    
     }
 
     return App.initContracts();
@@ -53,7 +51,6 @@ App = {
       App.contracts.CryptoGame = TruffleContract(game);
       App.contracts.CryptoGame.setProvider(App.web3Provider);
       App.contracts.CryptoGame.deployed().then(function(game) {
-        gameAddress = game.address
         console.log("CryptoGame Address:", game.address);
       });
     }).done(function() {
@@ -61,7 +58,7 @@ App = {
         App.contracts.ERC20 = TruffleContract(tokens);
         App.contracts.ERC20.setProvider(App.web3Provider);
         App.contracts.ERC20.deployed().then(function(tokens) {
-          console.log("All Coin Token Address:", tokens.address);
+          console.log("All Gold Coins Token Address:", tokens.address);
         });
         App.render()
       });
@@ -84,7 +81,7 @@ App = {
   render() {
     web3.eth.getCoinbase(function(err, account) {
       if (err === null) {
-
+      
       App.web3ProviderAllaccounts = new Web3.providers.HttpProvider('http://localhost:7545');
       web3allAccounts = new Web3(App.web3ProviderAllaccounts);
       web3allAccounts.eth.getAccounts(function(err, accounts) {
@@ -96,28 +93,29 @@ App = {
         App.account = account;
         document.getElementById("accountAddress").innerHTML = "Your Address/Account Is: " + account
         App.contracts.ERC20.deployed().then(function(instance){
-          return instance.thebalanceOf(App.account);
+          ERC20Instance = instance;
+          return ERC20Instance.thebalanceOf(App.account);
         }).then(function(balance){
           document.getElementById("accountNumberOfTokens").innerHTML = "You Currently have: " + balance + " Gold Coins"
         }).then(function(){
-          App.contracts.ERC20.deployed().then(function(bankWallet) {
-            return bankWallet.thebalanceOf(App.bank)
-          }).then(function(bankBalance) {
-            console.log("The Bank has " + bankBalance + " tokens")
-          })
+          return ERC20Instance.thebalanceOf(App.bank)
+        }).then(function(totalSupply){
+            document.getElementById("loader").style.display = "none"
+            document.getElementById("accountStats").style.display = "block"
+            document.getElementById("challenge").style.display = "none"
+            document.getElementById("name").innerHTML = App.namepool[Math.floor(Math.random() * App.namepool.length)]
+            console.log("The Bank has " + totalSupply + " tokens")
         })
       }
 
-
       App.contracts.CryptoGame.deployed().then(function(gameInstance){
-        return gameInstance.ownerToGladiator(App.account)
-      }).then(function(result){        
-        App.contracts.CryptoGame.deployed().then(function(gameInstance){
-          return gameInstance.gladiators(result.toNumber())
-        }).then(function(gladiatorResult){
-          if (gladiatorResult[9] === App.account) {
+        CryptoGameInstance = gameInstance
+        return CryptoGameInstance.ownerToGladiator(App.account)
+      }).then(function(result){
+        return CryptoGameInstance.gladiators(result.toNumber())
+      }).then(function(gladiatorResult){
+         if (gladiatorResult[9] === App.account) {
             App.showGladiatorStats(gladiatorResult);
-            console.log(gladiatorResult[10])
       
             var cooldownTime = new Date(gladiatorResult[10] * 1000);
             var cooldownTimerInterval = setInterval(cooldownTimerHandler, 1000)
@@ -127,6 +125,10 @@ App = {
                 if (timeDifference <= 0) {
                   document.getElementById("cooldownBlock").style.display = "none"
                   document.getElementById("actions").style.display = "block"
+                  document.getElementById("challenge").style.display = "block"
+                  document.getElementById("aiWin").style.display = "none"
+                  document.getElementById("playerWin").style.display = "none"
+                  document.getElementById("playerLose").style.display = "none"
                   clearInterval(cooldownTimerInterval)
                 }
                 else {
@@ -134,16 +136,14 @@ App = {
                     document.getElementById("cooldownBlock").style.display = "block"
                     document.getElementById("cooldown").innerHTML = gladiatorResult[0] + " is in a resting from an action and will finish in " + timeRemaining
                     document.getElementById("actions").style.display = "none"
+                    document.getElementById("challenge").style.display = "none"
+                    
+
                 }
             }
           }
-        })
       })
-
-      
-      
     });
-    
   },
 
   displayTokens() {
@@ -243,10 +243,10 @@ App = {
   },
   arenaSignUp() {
     App.contracts.CryptoGame.deployed().then(function(gameInstance){
-      cryptoGameInstace = gameInstance
-      return cryptoGameInstace.ownerToGladiator(App.account)
+      cryptoGameInstance = gameInstance
+      return cryptoGameInstance.ownerToGladiator(App.account)
     }).then(function(gladiatorId){
-        cryptoGameInstace.signInForArena(Number(gladiatorId))
+        cryptoGameInstance.signInForArena(Number(gladiatorId))
       /*  App.contracts.CryptoGame.deployed().then(function(gameInstance){
             gameInstance.signInForArena(Number(gladiatorId))
         }).then(function(){
@@ -257,26 +257,30 @@ App = {
         })
   },
 
-  arena() {
-    var glad1, glad2;
-    /*App.contracts.CryptoGame.deployed().then(function(instance){
-      gameInstance = instance
-      
-      return gameInstance.arenaRound(1)
-    }).then(function(){
-
-      for (var i = 0; i < 2; i+=2) {
-        gameInstance.gladiatorsForArena(i).then(function(g1){
-            glad1 = g1;
-        })
-         gameInstance.gladiatorsForArena(i+1).then(function(g2){
-            glad2 = g2;
-            gameInstance.fight(i, i+1)
-            console.log(glad1[0]  + " vs "  + glad2[0]) 
-        })
-        
+  fightAgainstAI() {  
+     App.contracts.CryptoGame.deployed().then(function(gameInstance){
+        cryptoGameInstance = gameInstance
+        return cryptoGameInstance.ownerToGladiator(App.account)
+      }).then(function(gladId){
+        myId = Number(gladId)
+        console.log("my glad id " + gladId)
+        return cryptoGameInstance.fightAI(myId);
+      }).then(function(winnerId){
+       // console.log(winnerId.logs)
+      console.log("power ai " + winnerId.logs[1].args._aiPower + " my power " + winnerId.logs[1].args._myPower)  
+      if (Number(winnerId.logs[1].args._aiPower) < Number(winnerId.logs[1].args._myPower)) { 
+          document.getElementById("playerWin").style.display = "block"
+          cryptoGameInstance.gladiators(myId).then(function(myGlad){
+              document.getElementById("winningGladiatorName").innerHTML = myGlad[0]
+          })
       }
-    })*/
+      else {
+          document.getElementById("aiWin").style.display = "block"  
+          document.getElementById("aiPower").innerHTML =winnerId.logs[1].args._aiPower  
+      }
+      return App.render()
+    })
+   
   },
 
   challenge() {
@@ -288,14 +292,24 @@ App = {
       console.log(document.getElementById("opponentAddress").value)
       return cryptoGameInstance.ownerToGladiator(document.getElementById("opponentAddress").value)
     }).then(function(enemyGladId){
-      /*console.log(myGladId.toString())
-      console.log(enemyGladId.toString())*/
       console.log("me " + Number(myGladId))
       console.log("enemy " + Number(enemyGladId))
       return cryptoGameInstance.fight(myGladId, Number(enemyGladId))
     }).then(function(winnerId){
-      console.log(Number(winnerId.logs[0].args._winnerId))
-      console.log(Number(winnerId.logs[0].args._winnerId) == myGladId)
+      console.log(winnerId.logs)
+      console.log(Number(winnerId.logs[winnerId.logs.length-1].args._winnerId) == myGladId)
+
+      cryptoGameInstance.gladiators(myGladId).then(function(myGlad){
+          if(Number(winnerId.logs[winnerId.logs.length-1].args._winnerId) == myGladId){
+            document.getElementById("playerWin").style.display = "block"
+            document.getElementById("winningGladiatorName").innerHTML = myGlad[0]
+          }
+          else {
+            document.getElementById("playerLose").style.display = "block"
+            document.getElementById("losingGladiatorName").innerHTML = myGlad[0]
+          }
+          return App.render()
+      })
     })
   },
 
@@ -359,9 +373,10 @@ App = {
   
   showGladiatorStats(gladiator){
 
-        document.getElementById("gladiatorName").innerHTML = gladiator[0];
-        document.getElementById("gladiatorLevel").innerHTML = gladiator[1];
-        
+        document.getElementById("gladiatorName").innerHTML = gladiator[0]
+        document.getElementById("gladiatorTier").innerHTML = gladiator[1]
+        document.getElementById("gladiatorWinsRemaining").innerHTML = Number(gladiator[1])-Number(gladiator[12]);
+
         document.getElementById("gladiatorSta").innerHTML = gladiator[4];
         document.getElementById("gladiatorStr").innerHTML = gladiator[5];
         document.getElementById("gladiatorDex").innerHTML = gladiator[6];

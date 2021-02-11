@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gladiator Training</title>
+    <title>How To Train Your Gladiator</title>
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -14,23 +14,26 @@
       <!-- <div class="container" style="width: 650px;"> -->
       <div class="row">
         <div class="col-lg-12">
-          <h1 class="text-center">Gladiator Training</h1>
+          <h1 class="text-center">How To Train Your Gladiator</h1>
           <hr/>
           <br/>
-          <div id="loader">
+          <div id="loader" style="display: block">
             <p class="text-center">Loading...</p>
           </div>
             </div>  
             <div id="accountStats" style="display: none">
                <p id="accountNumberOfTokens" class="text-center">0</p>
                <p id="accountAddress" class="text-center">0</p>
+               
             </div>
-            <hr>
+           <hr>
             <div class="text-left;" id="gladiatorStats" style="display: none">
               
-                <h6>Name: <label id="gladiatorName" value=0></label></h6>
+                <h5>Name: <label id="gladiatorName"></label></h5>
     
-                <h6>Level: <label id="gladiatorLevel" value=0></label></h6>
+                <h5>Tier: <label id="gladiatorTier"></label></h5>
+
+                <h5>Win <label id="gladiatorWinsRemaining" >0</label> Fights To Rise In Tier</h5>
                 
                 <div class="progress">
                     <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40"
@@ -53,15 +56,14 @@
                     </div>
                 </div>
 
-                <h6>Stamina: <label id="gladiatorSta" value=0></label></h6>
+                <h5>Stamina: <label id="gladiatorSta" value=0></label></h5>
 
-                <h6>Strength: <label id="gladiatorStr" value=0></label></h6>
+                <h5>Strength: <label id="gladiatorStr" value=0></label></h5>
 
-                <h6>Dexterity: <label id="gladiatorDex" value=0></label></h6>
+                <h5>Dexterity: <label id="gladiatorDex" value=0></label></h5>
             </div>
 
-        <form id="recruit" class="text-center" style="display: block">
-            
+        <form id="recruit" class="text-center" style="display: none">     
             <div>
               <label id="name" value=0></label>
 
@@ -97,6 +99,7 @@
              </div>
 
             <button onClick="App.recruitGladiator(); return false;"  type="submit" class="btn btn-primary" name="recruit">Recruit Gladiator</button>      
+          
         </form>
          <hr>
         <div class="text-center" id="cooldownBlock" style="display: none">
@@ -104,7 +107,7 @@
         </div> 
         <form id="actions" style="display: none; margin-left:20px">
          
-          <h4 class="text-center">Each action costs 10 Gold Coins, to earn more win in the arena</h4>
+          <h4 class="text-center">Each action costs 10 Gold Coins<br>To earn more win against the AI or against another players' Gladiator</h4>
             <h5>
               <button onClick="App.eatTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="eatTraining">Eat</button>
               <span class="text-success" style="margin-left: 106px">+Satiation(25)</span>  
@@ -135,157 +138,38 @@
               <span class="text-danger" style="margin-left: 45px"> -Vigor(20) -Satiation(20) -HP(5)</span>
             </h5>
         </form>
-        <form>
+        <form id="challenge" class="text-center" style="display: none">
           <hr>
             <div>
+              <h4>You can only challenge those whose tier is equal or higher than yours<br>Make sure who you challenge isn't in a tier below you</h3>
               <button class="btn btn-primary"  onClick="App.challenge(); return false;">Challenge Another Account</button>
               <input class="text-center" style='margin-left: 14px' type="text" id="opponentAddress" value="">
             </div>
+
+            <div>
+              <br>
+              <button class="btn btn-primary"  onClick="App.fightAgainstAI(); return false;">Fight Against AI</button>
+            </div>
         </form>
-        </form>
 
 
-          <div id ="Winner">
-            <p id="TheWinner" class="text-center"></p>
-          </div>
-
-          
-        
-          <div id="content" style="display: none;">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Pic</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Votes</th>
-                </tr>
-              </thead>
-              <tbody id="candidatesResults">
-              </tbody>
-            </table>
-            <hr/>
-            <div class="col-xs-12 col-sm-8 col-sm-push-2">
-          
-         
-            <form onSubmit="App.castVote(); return false;">
-              <div class="form-group">
-                <label for="candidatesSelect">Select Candidate</label>
-                <select class="form-control" id="candidatesSelect">
-                </select>
-              </div>
-              <button type="submit" class="btn btn-primary">Vote</button>
-            </form>
-              <hr/>
-            <div id="questionnaireButton">
-              <form onSubmit="App.questionnaire(); return false;">
-                <div id="recomendCanididate"class="form-group">
-                  <label for="recomendCanididate">Recomand Candidate</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Recomend Candidate to Vote</button>
-              </form>
-              </div>
-              <hr/>
-            
-           
-          </div>
-          <div id="times">
-          <p id="timerleftformat" class="text-center"></p>
-          </div> 
-          <div id="recomends">
-            <table id="recomendtable"class="table">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Question</th>
-                  <th scope="col">Options</th>
-                </tr>
-              </thead>
-              <tbody id="RecomendedRows">
-                    <form>
-                      <tr>
-                        <td>1</td><td> האם אתה תומך בהקמת ממשלה עם המפלגות הערביות</td><td>
-                          <div id ="dq1"class="radio">
-                            <label><input type="radio" id='regular1' name="q1" value=1>כן</label>
-                            <label><input type="radio" id='regular1' name="q1" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2</td><td> האם אתה בעד החלת ריבונות על יהודה ושומרון באופן חד צדדי</td><td>
-                          <div id ="dq2"class="radio">
-                            <label><input type="radio" id='regular2' name="q2" value=1>כן</label>
-                            <label><input type="radio" id='regular2' name="q2" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>3</td><td> האם יש לאפשר מסחר ותחבורה ציבורית בשבת</td><td>
-                          <div id ="dq3"class="radio">
-                            <label><input type="radio" id='regular3' name="q3" value=1>כן</label>
-                            <label><input type="radio" id='regular3' name="q3" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>4</td><td> האם הגישה הקפיטליסטית עדיפה על הגישה הסוציאל-דמוקרטית</td><td>
-                          <div id ="dq4"class="radio">
-                            <label><input type="radio" id='regular4' name="q4" value=1>כן</label>
-                            <label><input type="radio" id='regular4' name="q4" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>5</td><td> האם הרעיון שתי המדינות לשני עמים הוא הפתרון המדיני הרצוי</td><td>
-                          <div id ="dq5"class="radio">
-                            <label><input type="radio" id='regular5' name="q5" value=1>כן</label>
-                            <label><input type="radio" id='regular5' name="q5" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>6</td><td> (האם יש לאפשר לכנסת לחוקק חוק שנפסל בבגץ(פסגת ההתגברות</td><td>
-                          <div id ="dq6"class="radio">
-                            <label><input type="radio" id='regular6' name="q6" value=1>כן</label>
-                            <label><input type="radio" id='regular6' name="q6" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>7</td><td> האם אתה בעד לאפשר נישואים אזרחיים</td><td>
-                          <div id ="dq7"class="radio">
-                            <label><input type="radio" id='regular7' name="q7" value=1>כן</label>
-                            <label><input type="radio" id='regular7' name="q7" value=0>לא</label>
-                          </div>
-                        </td>
-                      </tr>
-                    </form>
-              </tbody>
-            </table>
-          </div>
-            <div id="castrecomndesButton"> 
-              <hr/>
-            <form onSubmit="App.castrecomndes(); return false;">
-              <div id="castredc"class="form-group">
-                <label for="castredc">Finish questionnaire</label>
-              </div>
-              <button type="submit" class="btn btn-primary">Finish</button>
-            </form>
-          </div>
-            <div id="recomendlastQuestion">
-              <hr/>
-              <form onSubmit="App.lastVote(); return false;">
-                <div id="lastq"class="form-group">
-                 <label for="recomendlastQuestion">Last Question</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Finish</button>
-              </form>
-             </div>
-         </div>
+        <div id="playerWin" class="text-center" style="display: none">
+          <h4><span class="text-success" id="winningGladiatorName"></span> was victorious!</h4>
+          <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F98%2F6b%2Fa5%2F986ba5f97f812a9247a3e7b7e781f303.jpg&f=1&nofb=1"
+            width="768" height="512">
         </div>
-      </div>
-    </div>
 
+        <div id="playerLose" class="text-center" style="display: none">
+          <h4><span class="text-danger" id="losingGladiatorName"></span> was defeated in combat!</h4>
+          <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2Fc0%2Fae%2F9d%2Fc0ae9d6cdde0d4812406bb94047147e2.jpg&f=1&nofb=1"
+            width="768" height="512">
+        </div>
+
+        <div id="aiWin" class="text-center"  style="display: none">
+          <h4 class="text-danger">The AI has won with the overall power of <label id="aiPower"></label></h6>
+          <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fgamespot1.cbsistatic.com%2Fuploads%2Fscreen_kubrick%2F1574%2F15746725%2F3601516-gsu_historyof_terminator_v3_site.jpg&f=1&nofb=1"
+           width="768" height="512">
+        </div>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
@@ -295,9 +179,3 @@
     <script src="js/app.js"></script>
   </body>
 </html>
-
-            <!-- <p id="nowtimeformat" class="text-center"></p> -->
-          <!-- <p id="nowtime" class="text-center"></p>
-          <p id="endtime" class="text-center"></p> -->
-          <!-- <p id="endtimeformat" class="text-center"></p>
-          <p id="timerleft" class="text-center"></p> -->
