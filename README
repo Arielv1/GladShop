@@ -1,0 +1,13 @@
+Instuctions for runnign the app:
+
+1. Open Ganache
+2. Clone the project and open the directory in cmd
+    2.1 truffle migrate --reset
+    2.2 npm run dev
+    2.3. A browser page with the url of localhost:8000 should open for you with "Loading..." message
+3. Open MetaMask and make sure you're connected to Ganache network: localhost:7545
+4. Import any private key from Ganache to MetaMask EXCEPT THE FIRST ACCOUNT - the first Ganache address is the "bank" in the game that holds all ERC20 tokens.
+5. After connecting to a Ganache account with MetaMask if the page isn't refreshed and you are provided with a "Recruit" screen, press F5.
+6. Enjoy the game :)
+
+* For resetting the game and progress for all accounts run in console: truffle migrate --reset and once it's finished refresh the html page.
