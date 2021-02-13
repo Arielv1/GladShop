@@ -6,14 +6,11 @@ App = {
   bank: '0x0',
   web3: '',
 
-  
-
-  init: function() {
-     
+  init() {
       App.initNamepool();
       App.initStats();
-  //  App.getallAcounts();
-    return App.initWeb3();
+      App.initWeb3();
+      App.initContracts();
   },
 
   initNamepool() {
@@ -31,17 +28,13 @@ App = {
       ethereum.enable();
       web3 = new Web3(web3.currentProvider);
       web3.eth.defaultAccount = web3.eth.accounts[0]
-      document.getElementById("recruit").style.display = "block"
-        
-    } else {
-            
+      document.getElementById("recruit").style.display = "block" 
+    } else { 
       App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
       ethereum.enable();
-      web3 = new Web3(App.web3Provider);
-    
+      web3 = new Web3(App.web3Provider)
     }
 
-    return App.initContracts();
   },
 
  
