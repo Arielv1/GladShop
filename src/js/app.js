@@ -54,10 +54,10 @@ App = {
         console.log("CryptoGame Address:", game.address);
       });
     }).done(function() {
-      $.getJSON("ERC20.json", function(tokens) {
-        App.contracts.ERC20 = TruffleContract(tokens);
-        App.contracts.ERC20.setProvider(App.web3Provider);
-        App.contracts.ERC20.deployed().then(function(tokens) {
+      $.getJSON("GoldCoinToken.json", function(tokens) {
+        App.contracts.GoldCoinToken = TruffleContract(tokens);
+        App.contracts.GoldCoinToken.setProvider(App.web3Provider);
+        App.contracts.GoldCoinToken.deployed().then(function(tokens) {
           console.log("All Gold Coins Token Address:", tokens.address);
         });
         App.render()
@@ -92,13 +92,13 @@ App = {
 
         App.account = account;
         document.getElementById("accountAddress").innerHTML = "Your Address/Account Is: " + account
-        App.contracts.ERC20.deployed().then(function(instance){
-          ERC20Instance = instance;
-          return ERC20Instance.thebalanceOf(App.account);
+        App.contracts.GoldCoinToken.deployed().then(function(instance){
+          GoldCoinTokenInstance = instance;
+          return GoldCoinTokenInstance.thebalanceOf(App.account);
         }).then(function(balance){
           document.getElementById("accountNumberOfTokens").innerHTML = "You Currently have: " + balance + " Gold Coins"
         }).then(function(){
-          return ERC20Instance.thebalanceOf(App.bank)
+          return GoldCoinTokenInstance.thebalanceOf(App.bank)
         }).then(function(totalSupply){
             document.getElementById("loader").style.display = "none"
             document.getElementById("accountStats").style.display = "block"
@@ -147,7 +147,7 @@ App = {
   },
 
   displayTokens() {
-      App.contracts.ERC20.deployed().then(function(instance){
+      App.contracts.GoldCoinToken.deployed().then(function(instance){
           return instance.thebalanceOf(App.account);
         }).then(function(balance){
           console.log("updating number of tokens to " + balance)

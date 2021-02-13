@@ -56,11 +56,11 @@
                     </div>
                 </div>
 
-                <h5>Stamina: <label id="gladiatorSta" value=0></label></h5>
+                <h5 class="text-center">Stamina: <label id="gladiatorSta" value=0></label></h5>
 
-                <h5>Strength: <label id="gladiatorStr" value=0></label></h5>
+                <h5 class="text-center">Strength: <label id="gladiatorStr" value=0></label></h5>
 
-                <h5>Dexterity: <label id="gladiatorDex" value=0></label></h5>
+                <h5 class="text-center">Dexterity: <label id="gladiatorDex" value=0></label></h5>
             </div>
 
         <form id="recruit" class="text-center" style="display: none">     
@@ -108,35 +108,35 @@
         <form id="actions" style="display: none; margin-left:20px">
          
           <h4 class="text-center">Each action costs 10 Gold Coins<br>To earn more win against the AI or against another players' Gladiator</h4>
-            <h5>
+            <h4>
               <button onClick="App.eatTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="eatTraining">Eat</button>
-              <span class="text-success" style="margin-left: 106px">+Satiation(25)</span>  
-              <span class="text-danger" style="margin-left:40px">-Vigor(10) +HP(5)</span>
-            </h5>
+              <span class="text-success" style="margin-left: 106px">+Satiation(25)  +HP(5)</span>  
+              <span class="text-danger" style="margin-left:77px">-Vigor(10)</span>
+            </h4>
 
-            <h5>
+            <h4>
               <button onClick="App.sleepTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="sleepTraining">Sleep</button>
-              <span class="text-success" style="margin-left: 93px">+Vigor(25)</span> 
-              <span class="text-danger" style="margin-left: 62px">-Satiation(10) +HP(20)</span>
-            </h5>
+              <span class="text-success" style="margin-left: 93px">+Vigor(25)  +HP(20)</span> 
+              <span class="text-danger" style="margin-left: 95px">-Satiation(10)</span>
+            </h4>
 
-            <h5>
+            <h4>
               <button onClick="App.muscleTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="muscleTraining">Muscle Workout</button>
-              <span class="text-success" style="margin-left: 38px">+Strength(1)</span>
+              <span class="text-success" style="margin-left: 38px">+Strength(1) +Max HP(2)</span>
               <span class="text-danger" style="margin-left: 49px"> -Vigor(20) -Satiation(20) -HP(5)</span>
-            </h5>
+            </h4>
 
-            <h5>
+            <h4>
               <button onClick="App.enduranceTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="enduranceTraining">Endurance Training</button>
-              <span class="text-success" style="margin-left: 20px">+Stamina(1)</span>
+              <span class="text-success" style="margin-left: 20px">+Stamina(1) +Max HP(2)</span>
               <span class="text-danger" style="margin-left: 49px"> -Vigor(20) -Satiation(20) -HP(5)</span>
-            </h6>
+            </h4>
 
-            <h5>
+            <h4>
               <button onClick="App.flexibilityTraining(); return false;"  type="submit" class="btn btn-primary btn-sm" name="eat" id="flexibilityTraining">Flexibility Training</button>
-              <span class="text-success" style="margin-left: 29px">+Dexterity(1)</span> 
+              <span class="text-success" style="margin-left: 29px">+Dexterity(1) +Max HP(2)</span> 
               <span class="text-danger" style="margin-left: 45px"> -Vigor(20) -Satiation(20) -HP(5)</span>
-            </h5>
+            </h4>
         </form>
         <form id="challenge" class="text-center" style="display: none">
           <hr>
