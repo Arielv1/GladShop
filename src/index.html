@@ -18,7 +18,7 @@
           <hr/>
           <br/>
           <div id="loader" style="display: block">
-            <p class="text-center">Loading...</p>
+            <p class="text-center">Please Connect To Ganache...</p>
           </div>
             </div>  
             <div id="accountStats" style="display: none">
@@ -70,25 +70,25 @@
             </div>
 
             <div>
-              <label>Max HP<input class="text-center" style='margin-left: 14px' type="text" id="maxHP" value=100></label>
+              <label>Max HP<input class="text-center" style='margin-left: 14px' type="text" id="maxHP" value=100 readonly></label>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="maxHP" id="increase">+</button>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="maxHP" id="decrease">-</button>
             </div>
 
             <div>
-              <label>Stamina <input class="text-center" style='margin-left: 6px' type="text" id="stamina" value=0></label>
+              <label>Stamina <input class="text-center" style='margin-left: 6px' type="text" id="stamina" value=0 readonly></label>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="stamina" id="increase">+</button>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="stamina" id="decrease">-</button>
             </div>
 
             <div>
-              <label>Strength <input class="text-center" style='margin-left: 3px' type="text" id="str" value=0></label>
+              <label>Strength <input class="text-center" style='margin-left: 3px' type="text" id="str" value=0 readonly></label>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="str" id="increase">+</button>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="str" id="decrease">-</button>
             </div>
 
             <div>
-              <label>Dexterity  <input class="text-center" type="text" id="dex" value=0></label>
+              <label>Dexterity  <input class="text-center" type="text" id="dex" value=0 readonly></label>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="dex" id="increase">+</button>
               <button onClick="App.valueModifier(this.id, this.name); return false;" type="submit" class="btn btn-primary btn-sm" name="dex" id="decrease">-</button>
             </div>

@@ -13,15 +13,18 @@ App = {
       App.initContracts();
   },
 
+  // create names for gladiators when recruiting
   initNamepool() {
     App.namepool = ["Tertius Fulcinius Martialis","Publius Maecilius Plautis","Caeso Balventius Iovinus","Publius Canutius Belletor","Arruns Cispius Vitulus","Titus Lusius Augustus","Decius Verginius Senna","Tiberius Mucius Dardanius","Manius Lollius Figulus","Aulus Falerius Ahala",
     "Titus Caprenius Siricus","Quintus Laelius Diocourides","Secundus Vesuvius Drusus","Agrippa Galerius Hilaris","Paulus Messienus Eugenius","Sextus Quirinius Tremorinus","Marcus Caeparius Patiens","Vel Aurius Vitalion","Spurius Maelius Sisinnius","Maximus Hortensius Majus"]
   },
 
+  // init random number of stats to allocate when recruiting
   initStats() {
       document.getElementById('remainingStats').innerHTML = Math.floor(Math.random() * 5) + 5
   },
 
+  // init web3
  initWeb3() {
     if (typeof web3 !== 'undefined') {
       App.web3Provider = web3.currentProvider;
@@ -37,8 +40,7 @@ App = {
 
   },
 
- 
-
+  // set up truffle contacts 
   initContracts() {
     $.getJSON("CryptoGame.json", function(game) {
       App.contracts.CryptoGame = TruffleContract(game);
@@ -59,6 +61,7 @@ App = {
 
   },
 
+  // convert milliseconds to time hh:mm:ss
   convertMSToTime : function (milliseconds) {
       seconds = Math.floor((milliseconds / 1000) % 60),
       minutes = Math.floor((milliseconds / (1000 * 60)) % 60),
@@ -71,6 +74,7 @@ App = {
       return hours + ":" + minutes + ":" + seconds
   },
 
+  // decides which blocks to display based on user actions and state (i.e in cooldown or not)
   render() {
     web3.eth.getCoinbase(function(err, account) {
       if (err === null) {
@@ -139,6 +143,7 @@ App = {
     });
   },
 
+  // display total num of tokens (coins) owned by user
   displayTokens() {
       App.contracts.GoldCoinToken.deployed().then(function(instance){
           return instance.thebalanceOf(App.account);
@@ -148,6 +153,7 @@ App = {
       })
   },
 
+  // changes the value displayed at the input field - recruit gladiator block
   valueModifier(id, name) {
     var hp = 0, sta = 0, str = 0 , dex = 0
     var remainingStatsToAllocate = Number(document.getElementById("remainingStats").innerHTML)
@@ -212,7 +218,10 @@ App = {
    
   },
 
-
+  /* 
+  recruits gladiator - read value from input fields, makes sure all stats are allocated
+                        binds gladiator to user account/ganache address
+  */ 
   recruitGladiator() {
     var name = document.getElementById("name").innerHTML
     var maxHP = document.getElementById("maxHP").value
@@ -226,30 +235,19 @@ App = {
         return gameInstance.recruitGladiator(App.account, name, sta, str, dex, maxHP)
       }).then(function(){
           return App.render()
-          }).then(function(){  
-        })
+          })
     }
     else {
         alert("You have " + remainingStatsToAllocate + " stats left to allocate")
     } 
     
   },
-  arenaSignUp() {
-    App.contracts.CryptoGame.deployed().then(function(gameInstance){
-      cryptoGameInstance = gameInstance
-      return cryptoGameInstance.ownerToGladiator(App.account)
-    }).then(function(gladiatorId){
-        cryptoGameInstance.signInForArena(Number(gladiatorId))
-      /*  App.contracts.CryptoGame.deployed().then(function(gameInstance){
-            gameInstance.signInForArena(Number(gladiatorId))
-        }).then(function(){
-          App.render()
-        })*/
-    }).then(function(){
-          App.render()
-        })
-  },
 
+  /*
+    combat against AI - gets users' gladiator, invokes 'fightAI' contract method, 
+                        if player wins displays victory screen, else display lose screen
+                        with the AI's power
+  */
   fightAgainstAI() {  
      App.contracts.CryptoGame.deployed().then(function(gameInstance){
         cryptoGameInstance = gameInstance
@@ -276,22 +274,21 @@ App = {
    
   },
 
+  /*
+    combat against other players' gladiators' - need to paste in the input field the ganache address
+        - make sure their tier is the same or higher than yours
+        - make sure their gladiator is not in a cooldown period
+  */
   challenge() {
     App.contracts.CryptoGame.deployed().then(function(gameInstance){
       cryptoGameInstance = gameInstance;
       return cryptoGameInstance.ownerToGladiator(App.account)
     }).then(function(myId){
       myGladId = Number(myId)
-      console.log(document.getElementById("opponentAddress").value)
       return cryptoGameInstance.ownerToGladiator(document.getElementById("opponentAddress").value)
     }).then(function(enemyGladId){
-      console.log("me " + Number(myGladId))
-      console.log("enemy " + Number(enemyGladId))
       return cryptoGameInstance.fight(myGladId, Number(enemyGladId))
     }).then(function(winnerId){
-      console.log(winnerId.logs)
-      console.log(Number(winnerId.logs[winnerId.logs.length-1].args._winnerId) == myGladId)
-
       cryptoGameInstance.gladiators(myGladId).then(function(myGlad){
           if(Number(winnerId.logs[winnerId.logs.length-1].args._winnerId) == myGladId){
             document.getElementById("playerWin").style.display = "block"
@@ -306,8 +303,8 @@ App = {
     })
   },
 
+  // +satiation +hp -vigor, invoke cooldown
   eatTraining() {
-
     App.contracts.CryptoGame.deployed().then(function(gameInstance){
         cryptoGameInstance = gameInstance;
         return cryptoGameInstance.ownerToGladiator(App.account)
@@ -319,6 +316,7 @@ App = {
     
   },
 
+  // +vigor +hp -satiation, invoke cooldown
   sleepTraining() {
     App.contracts.CryptoGame.deployed().then(function(gameInstance){
         cryptoGameInstance = gameInstance;
@@ -330,6 +328,7 @@ App = {
     })
   },
 
+  // +strength +max_hp -satiation -vigor -hp, invoke cooldown  muscleTraining() 
   muscleTraining() {
     App.contracts.CryptoGame.deployed().then(function(gameInstance){
         cryptoGameInstance = gameInstance;
@@ -341,6 +340,7 @@ App = {
     })
   },
 
+  // +stamina +max_hp -satiation -vigor -hp, invoke cooldown
   enduranceTraining() {
     App.contracts.CryptoGame.deployed().then(function(gameInstance){
         cryptoGameInstance = gameInstance;
@@ -352,8 +352,8 @@ App = {
     })
   },
 
+  // +dexterity +max_hp -satiation -vigor -hp, invoke cooldown
   flexibilityTraining() {
-
    App.contracts.CryptoGame.deployed().then(function(gameInstance){
         cryptoGameInstance = gameInstance;
         return cryptoGameInstance.ownerToGladiator(App.account)
@@ -364,6 +364,7 @@ App = {
     })
   },
   
+  // show gladiator stats 
   showGladiatorStats(gladiator){
 
         document.getElementById("gladiatorName").innerHTML = gladiator[0]
