@@ -11,3 +11,16 @@ Instuctions for runnign the app:
 6. Enjoy the game :)
 
 * For resetting the game and progress for all accounts run in console: truffle migrate --reset and once it's finished refresh the html page.
+
+Misc.:
+* Training Actions: Cost 10 Gold Coins and activate cooldown period.
+
+* You can only challenge other players whose level is equal or higher than you.
+* When a player losses in a fight he has a (1 minute) of protection cooldown period, no one will be able to challenge him at that time.
+* Whenever you partake in a fight your stats reduce in some capacity - if you lose they are greately reduced.
+* Winning against other players raises your rank in a tier until a promotion occurs where you rise to the next tier.
+* It is possible to go down in tiers as well as rise them.
+* In higher tiers the AI is harder.
+* Fighting against the AI doesn't reduce stats and doesn't affect tiers.
+
+
